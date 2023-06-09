@@ -49,7 +49,7 @@ func findAllTransactions(T Transactions) {
 	for i := 0; i < T.totalData; i++ {
 		fmt.Printf("\n=======\nID : %v\nTotal Produk: %v\n", T.data[i].id, T.data[i].products.totalData)
 		fmt.Print("Produk: [\n")
-		printProduct(T.data[i].products)
+		printManyProduct(T.data[i].products)
 		if T.data[i].status == "OUT" {
 			fmt.Printf("]\nTotal Harga: %d\n", T.data[i].totalPrice)
 		} else {
@@ -75,7 +75,7 @@ func maxMin(T Transactions, isMax bool) {
 	if result.status == "OUT" {
 		fmt.Printf("============ ID : %v ============\nTotal Produk: %v\n", result.id, result.products.totalData)
 		fmt.Print("Produk: [\n")
-		printProduct(result.products)
+		printManyProduct(result.products)
 		fmt.Printf("]\nTotal Harga: %d\n==========\n", result.totalPrice)
 	}
 }
@@ -161,13 +161,14 @@ func search(T Products, flag string) Products {
 	return arrProduct
 }
 
-func printProduct(P Products) {
+func printManyProduct(P Products) {
 	for i := 0; i < P.totalData; i++ {
 		fmt.Printf("\nID: %v \nNama: %s \nHarga: %v \nJumlah: %v\n\n", P.data[i].id, P.data[i].name, P.data[i].price, P.data[i].qty)
 	}
 }
 
-func insertionSort(T *Transactions, flag string, isAsc bool) {
+func insertionSort(T *Transactions, flag, status string) {
+	isAsc := status == "1"
 	for pass := 1; pass < T.totalData; pass++ {
 		var i int = pass
 		var transaction Transaction = T.data[i]
@@ -220,13 +221,17 @@ func findTransactionByID(T Transactions, id string) Transaction {
 func printTransaction(T Transaction) {
 	fmt.Printf("\n=======\nID : %v\nTotal Produk: %v\n", T.id, T.products.totalData)
 	fmt.Print("Produk: [\n")
-	printProduct(T.products)
+	printManyProduct(T.products)
 	if T.status == "OUT" {
 		fmt.Printf("]\nTotal Harga: %d\n", T.totalPrice)
 	} else {
 		fmt.Print("]\n")
 	}
 	fmt.Printf("Status: %v\n=======\n", T.status)
+}
+
+func printProduct(P Product) {
+	fmt.Printf("\nID: %v \nNama: %s \nHarga: %v \nJumlah: %v\n\n", P.id, P.name, P.price, P.qty)
 }
 
 // Commands
@@ -302,8 +307,9 @@ func insertProductTransaction(P Products, selectedProducts *Products) {
 	var product Product
 	fmt.Printf("# Selesai\n* Batalkan\n")
 	for true {
-		fmt.Println("Keranjang: ")
-		printProduct(*selectedProducts)
+		fmt.Println("*****\t KERANJANG    *****")
+		printManyProduct(*selectedProducts)
+		fmt.Println("****************************")
 		fmt.Printf("Total Harga: %v\nMasukkan nama barang: ", calculatePrice(*selectedProducts))
 		fmt.Scan(&product.name)
 		if product.name == "#" || product.name == "*" {
@@ -317,22 +323,27 @@ func insertProductTransaction(P Products, selectedProducts *Products) {
 			fmt.Printf("\n============================================\n---\tMasukkan Data yang benar\t---\n============================================\n")
 		} else {
 			product = P.data[idx]
+			fmt.Println("***\tStatus Barang\t***")
+			printProduct(product)
+			fmt.Println("***************************")
 			fmt.Print("Masukkan jumlah barang: ")
 			_, err := fmt.Scanf("%d", &product.qty)
 			if err != nil {
 				break
 			}
 			if product.qty <= P.data[idx].qty {
-				P.data[idx].qty -= product.qty
-				var idxSelected = findIdxProduct(*selectedProducts, product.name)
-				if idxSelected >= 0 {
-					selectedProducts.data[idxSelected].qty += product.qty
-				} else {
-					selectedProducts.data[selectedProducts.totalData] = product
-					selectedProducts.totalData++
+				if product.qty != 0 {
+					P.data[idx].qty -= product.qty
+					var idxSelected = findIdxProduct(*selectedProducts, product.name)
+					if idxSelected >= 0 {
+						selectedProducts.data[idxSelected].qty += product.qty
+					} else {
+						selectedProducts.data[selectedProducts.totalData] = product
+						selectedProducts.totalData++
+					}
 				}
 			} else {
-				fmt.Println("Stok kurang")
+				fmt.Printf("****************************\n\tStok kurang\n****************************\n")
 			}
 		}
 	}
@@ -370,6 +381,16 @@ func calculatePrice(P Products) int {
 	return totalPrice
 }
 
+func scanStatusSort() string {
+	var status string
+	fmt.Print("Masukkan Pilihan: ")
+	fmt.Scan(&status)
+	if status == "1" || status == "2" {
+		return status
+	}
+	return scanStatusSort()
+}
+
 // Menu
 func managementMenu(P *Products, T *Transactions) {
 	var idx int
@@ -389,36 +410,42 @@ func managementMenu(P *Products, T *Transactions) {
 			insertProduct(P, T)
 		case "2":
 			// Show All data Product
-			tempProducts := *P
+			var tempProducts Products = *P
 			if P.totalData > 0 {
 				fmt.Printf("-----\tData Diurutkan Berdasarkan:\t-----\n1. ID\n2. Nama\n3. Harga\n4. Jumlah\n5. Tidak diurutkan\n")
 				var s string
-				fmt.Print("Masukkan Pilihan: ")
-				fmt.Scan(&s)
+				for {
+					fmt.Print("Masukkan Pilihan: ")
+					fmt.Scan(&s)
+					if s == "1" || s == "2" || s == "3" || s == "4" || s == "5" {
+						break
+					}
+				}
 				if s != "5" {
 					fmt.Printf("-----\tCara Pengurutan:\t-----\n1. Ascending\n2. Descending\n")
-					var sorting string
-					fmt.Print("Masukkan Pilihan: ")
-					fmt.Scan(&sorting)
+					sorting := scanStatusSort()
 					sort(&tempProducts, sorting, s)
 				}
-				printProduct(tempProducts)
+				printManyProduct(tempProducts)
 			} else {
 				notFound()
 			}
 		case "3":
 			if P.totalData > 0 {
-				fmt.Print("Masukkan nama barang: ")
+				fmt.Print("Masukkan nama Produk yang ingin di ubah: ")
 				fmt.Scan(&product.name)
 				idx = findIdxProduct(*P, product.name)
-				if idx >= 0 {
+				if idx == -1 {
+					notFound()
+				} else {
 					product = P.data[idx]
-					fmt.Print("Masukkan harga barang: ")
+					printProduct(product)
+					fmt.Print("Masukkan nama barang baru: ")
+					fmt.Scan(&product.name)
+					fmt.Print("Masukkan harga barang baru: ")
 					fmt.Scan(&product.price)
 					updateProduct(P, idx, product)
 					fmt.Print("------\tSuccess Mengubah Barang\t------\n")
-				} else {
-					notFound()
 				}
 			} else {
 				notFound()
@@ -428,11 +455,11 @@ func managementMenu(P *Products, T *Transactions) {
 				fmt.Print("Masukkan nama barang: ")
 				fmt.Scan(&product.name)
 				idx = findIdxProduct(*P, product.name)
-				if idx >= 0 {
+				if idx == -1 {
+					notFound()
+				} else {
 					deleteProduct(P, idx)
 					fmt.Print("------\tSuccess Menghapus Barang\t------\n")
-				} else {
-					notFound()
 				}
 			} else {
 				notFound()
@@ -440,13 +467,18 @@ func managementMenu(P *Products, T *Transactions) {
 		case "5":
 			//Find Product
 			if P.totalData > 0 {
-				fmt.Printf("-----\tCari Berdasarkan:\t-----\n1. ID \n2. Nama \n3. Harga\n4. Jumlah")
 				var s string
-				fmt.Printf("\nMasukkan pilihan: ")
-				fmt.Scan(&s)
+				fmt.Printf("-----\tCari Berdasarkan:\t-----\n1. ID \n2. Nama \n3. Harga\n4. Jumlah")
+				for {
+					fmt.Printf("\nMasukkan pilihan: ")
+					fmt.Scan(&s)
+					if s == "1" || s == "2" || s == "3" || s == "4" {
+						break
+					}
+				}
 				var data Products = search(*P, s)
 				if data.totalData > 0 {
-					printProduct(data)
+					printManyProduct(data)
 				}
 			} else {
 				notFound()
@@ -460,9 +492,9 @@ func managementMenu(P *Products, T *Transactions) {
 func transactionMenu(T *Transactions, P *Products) {
 	var selectedMenu string
 	var selectedProducts Products
-	for true {
-		fmt.Printf("-----\tMenu Transaksi\t-----\n1. Transaksi\n2. Lihat History Transaksi\n3. Data Penjualan\n4. Pencarian Dengan ID\n0. Kembali\n---------------------------	\n")
-		for true {
+	for {
+		fmt.Printf("-----\tMenu Transaksi\t-----\n1. Transaksi\n2. Lihat History Transaksi\n3. Data Penjualan\n4. Pencarian Dengan ID\n0. Kembali\n-----------------------------	\n")
+		for {
 			fmt.Print("Pilih menu: ")
 			fmt.Scan(&selectedMenu)
 			if selectedMenu == "0" || selectedMenu == "1" || selectedMenu == "2" || selectedMenu == "3" || selectedMenu == "4" {
@@ -474,7 +506,8 @@ func transactionMenu(T *Transactions, P *Products) {
 			nPrev := T.totalData
 			insertProductTransaction(*P, &selectedProducts)
 			if selectedProducts.totalData > 0 {
-				insertTransaction(T, selectedProducts, "OUT")
+				status := "OUT"
+				insertTransaction(T, selectedProducts, status)
 				updateQtyManyProducts(P, selectedProducts)
 				if nPrev == T.totalData {
 					fmt.Println("Pembelian Dibatalkan")
@@ -487,16 +520,18 @@ func transactionMenu(T *Transactions, P *Products) {
 			var flag, status string
 			var tempTransactions Transactions = *T
 			if T.totalData > 0 {
-				fmt.Printf("Urutkan Data Sesuai: \n1. ID\n2. Total Harga\n3. Tidak diurutkan\nMasukkan pilihan: ")
-				for true {
+				fmt.Printf("-----\tData Diurutkan Berdasarkan:\t-----\n1. ID\n2. Total Harga\n3. Tidak diurutkan\n")
+				for {
+					fmt.Print("Masukkan Pilihan:")
 					fmt.Scan(&flag)
-					if flag != "3" {
-						fmt.Printf("Mengurutkan dengan\n1. Ascending\n2. Descending\nMasukkan pilihan: ")
-						fmt.Scan(&status)
-						isAsc := (status == "1")
-						insertionSort(&tempTransactions, flag, isAsc)
+					if flag == "1" || flag == "2" || flag == "3" {
 						break
 					}
+				}
+				if flag != "3" {
+					fmt.Printf("-----\tCara Pengurutan:\t-----\n1. Ascending\n2. Descending\n")
+					status = scanStatusSort()
+					insertionSort(&tempTransactions, flag, status)
 				}
 				findAllTransactions(tempTransactions)
 			} else {
@@ -506,8 +541,13 @@ func transactionMenu(T *Transactions, P *Products) {
 			if T.totalData > 0 {
 				var s int
 				fmt.Printf("----- Pencarian Transaksi -----\n1. Terbesar\n2. Terkecil\n")
-				fmt.Print("Masukkan Pilihan: ")
-				fmt.Scan(&s)
+				for {
+					fmt.Print("Masukkan Pilihan: ")
+					fmt.Scan(&s)
+					if s == 1 || s == 2 {
+						break
+					}
+				}
 				isHighest := (s == 1)
 				maxMin(*T, isHighest)
 			} else {
@@ -516,13 +556,13 @@ func transactionMenu(T *Transactions, P *Products) {
 		case "4":
 			if T.totalData > 0 {
 				var id string
-				fmt.Printf("------ Cari Transaksi berdasatkan ID ------\nMasukkan ID: ")
+				fmt.Printf("------ Cari Transaksi berdasarkan ID ------\nMasukkan ID: ")
 				fmt.Scan(&id)
 				isExistData := findTransactionByID(*T, id)
-				if isExistData.id != "" {
-					printTransaction(isExistData)
-				} else {
+				if isExistData.id == "" {
 					notFound()
+				} else {
+					printTransaction(isExistData)
 				}
 			} else {
 				notFound()
