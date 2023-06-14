@@ -71,7 +71,6 @@ func maxMin(T Transactions, isMax bool) {
 			result = T.data[i]
 		}
 	}
-	fmt.Println(result.status)
 	if result.status == "OUT" {
 		fmt.Printf("============ ID : %v ============\nTotal Produk: %v\n", result.id, result.products.totalData)
 		fmt.Print("Produk: [\n")
@@ -250,17 +249,9 @@ func insertProduct(P *Products, T *Transactions) {
 			product.id = "PRD" + strconv.Itoa(id+1)
 		}
 		fmt.Print("Masukkan jumlah barang: ")
-		_, err := fmt.Scanf("%d", &product.qty)
-		if err != nil {
-			fmt.Println("Data yang anda masukan tidak valid")
-			return
-		}
+		fmt.Scan(&product.qty)
 		fmt.Print("Masukkan harga barang: ")
-		_, err = fmt.Scanf("%d", &product.price)
-		if err != nil {
-			fmt.Println("Data yang anda masukan tidak valid")
-			return
-		}
+		fmt.Scan(&product.price)
 		P.data[P.totalData] = product
 		P.totalData++
 	} else {
@@ -479,6 +470,8 @@ func managementMenu(P *Products, T *Transactions) {
 				var data Products = search(*P, s)
 				if data.totalData > 0 {
 					printManyProduct(data)
+				} else {
+					notFound()
 				}
 			} else {
 				notFound()
