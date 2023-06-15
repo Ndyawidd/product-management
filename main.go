@@ -35,7 +35,7 @@ func notFound() {
 	fmt.Print("\n------\tData Tidak Ditemukan\t------\n\n")
 }
 
-// Query
+// Product
 func findIdxProduct(P Products, name string) int {
 	for i := 0; i < P.totalData; i++ {
 		if P.data[i].name == name {
@@ -43,20 +43,6 @@ func findIdxProduct(P Products, name string) int {
 		}
 	}
 	return -1
-}
-
-func findAllTransactions(T Transactions) {
-	for i := 0; i < T.totalData; i++ {
-		fmt.Printf("\n=======\nID : %v\nTotal Produk: %v\n", T.data[i].id, T.data[i].products.totalData)
-		fmt.Print("Produk: [\n")
-		printManyProduct(T.data[i].products)
-		if T.data[i].status == "OUT" {
-			fmt.Printf("]\nTotal Harga: %d\n", T.data[i].totalPrice)
-		} else {
-			fmt.Print("]\n")
-		}
-		fmt.Printf("Status: %v\n=======\n", T.data[i].status)
-	}
 }
 
 func maxMin(T Transactions, isMax bool) {
@@ -79,7 +65,7 @@ func maxMin(T Transactions, isMax bool) {
 	}
 }
 
-func sort(T *Products, sorting string, flag string) {
+func selectionSort(T *Products, sorting string, flag string) {
 	for pass := 1; pass <= T.totalData-1; pass++ {
 		idx := pass - 1
 		for i := pass; i < T.totalData; i++ {
@@ -166,77 +152,13 @@ func printManyProduct(P Products) {
 	}
 }
 
-func insertionSort(T *Transactions, flag, status string) {
-	isAsc := status == "1"
-	for pass := 1; pass < T.totalData; pass++ {
-		var i int = pass
-		var transaction Transaction = T.data[i]
-		switch flag {
-		case "1":
-			if isAsc {
-				for i > 0 && T.data[i-1].id > transaction.id {
-					T.data[i] = T.data[i-1]
-					i--
-				}
-			} else {
-				for i > 0 && T.data[i-1].id < transaction.id {
-					T.data[i] = T.data[i-1]
-					i--
-				}
-			}
-		case "2":
-			if isAsc {
-				for i > 0 && (T.data[i-1].totalPrice > transaction.totalPrice || T.data[i-1].status == "IN") {
-					T.data[i] = T.data[i-1]
-					i--
-				}
-			} else {
-				for i > 0 && T.data[i-1].totalPrice < transaction.totalPrice {
-					T.data[i] = T.data[i-1]
-					i--
-				}
-			}
-		}
-		T.data[i] = transaction
-	}
-}
-
-func findTransactionByID(T Transactions, id string) Transaction {
-	var min, mid, max int
-	max = T.totalData - 1
-	for min <= max {
-		mid = (min + max) / 2
-		if T.data[mid].id == id {
-			return T.data[mid]
-		} else if T.data[mid].id > id {
-			max = mid - 1
-		} else {
-			min = mid + 1
-		}
-	}
-	return Transaction{}
-}
-
-func printTransaction(T Transaction) {
-	fmt.Printf("\n=======\nID : %v\nTotal Produk: %v\n", T.id, T.products.totalData)
-	fmt.Print("Produk: [\n")
-	printManyProduct(T.products)
-	if T.status == "OUT" {
-		fmt.Printf("]\nTotal Harga: %d\n", T.totalPrice)
-	} else {
-		fmt.Print("]\n")
-	}
-	fmt.Printf("Status: %v\n=======\n", T.status)
-}
-
 func printProduct(P Product) {
 	fmt.Printf("\nID: %v \nNama: %s \nHarga: %v \nJumlah: %v\n\n", P.id, P.name, P.price, P.qty)
 }
 
-// Commands
 func insertProduct(P *Products, T *Transactions) {
 	var product Product
-	product.id = "PRD" + "0"
+	product.id = "PRD0"
 	fmt.Print("Masukkan nama barang: ")
 	fmt.Scan(&product.name)
 	var idx = findIdxProduct(*P, product.name)
@@ -294,6 +216,7 @@ func updateQtyManyProducts(P *Products, selectedProducts Products) {
 	}
 }
 
+// Transaction
 func insertProductTransaction(P Products, selectedProducts *Products) {
 	var product Product
 	fmt.Printf("# Selesai\n* Batalkan\n")
@@ -357,10 +280,90 @@ func insertTransaction(T *Transactions, P Products, status string) {
 		totalPrice = calculatePrice(P)
 	}
 
-	transaction = Transaction{id: costumedId, products: P, status: status, totalPrice: totalPrice}
+	var currentProduct Products
+	currentProduct.data[currentProduct.totalData] = P.data[P.totalData-1]
+	currentProduct.totalData++
+	transaction = Transaction{id: costumedId, products: currentProduct, status: status, totalPrice: totalPrice}
 
 	T.data[T.totalData] = transaction
 	T.totalData++
+}
+
+func findAllTransactions(T Transactions) {
+	for i := 0; i < T.totalData; i++ {
+		fmt.Printf("\n=======\nID : %v\nTotal Produk: %v\n", T.data[i].id, T.data[i].products.totalData)
+		fmt.Print("Produk: [\n")
+		printManyProduct(T.data[i].products)
+		if T.data[i].status == "OUT" {
+			fmt.Printf("]\nTotal Harga: %d\n", T.data[i].totalPrice)
+		} else {
+			fmt.Print("]\n")
+		}
+		fmt.Printf("Status: %v\n=======\n", T.data[i].status)
+	}
+}
+
+func insertionSort(T *Transactions, flag, status string) {
+	isAsc := status == "1"
+	for pass := 1; pass < T.totalData; pass++ {
+		var i int = pass
+		var transaction Transaction = T.data[i]
+		switch flag {
+		case "1":
+			if isAsc {
+				for i > 0 && T.data[i-1].id > transaction.id {
+					T.data[i] = T.data[i-1]
+					i--
+				}
+			} else {
+				for i > 0 && T.data[i-1].id < transaction.id {
+					T.data[i] = T.data[i-1]
+					i--
+				}
+			}
+		case "2":
+			if isAsc {
+				for i > 0 && (T.data[i-1].totalPrice > transaction.totalPrice || T.data[i-1].status == "IN") {
+					T.data[i] = T.data[i-1]
+					i--
+				}
+			} else {
+				for i > 0 && T.data[i-1].totalPrice < transaction.totalPrice {
+					T.data[i] = T.data[i-1]
+					i--
+				}
+			}
+		}
+		T.data[i] = transaction
+	}
+}
+
+func findTransactionByID(T Transactions, id string) Transaction {
+	var min, mid, max int
+	max = T.totalData - 1
+	for min <= max {
+		mid = (min + max) / 2
+		if T.data[mid].id == id {
+			return T.data[mid]
+		} else if T.data[mid].id > id {
+			max = mid - 1
+		} else {
+			min = mid + 1
+		}
+	}
+	return Transaction{}
+}
+
+func printTransaction(T Transaction) {
+	fmt.Printf("\n=======\nID : %v\nTotal Produk: %v\n", T.id, T.products.totalData)
+	fmt.Print("Produk: [\n")
+	printManyProduct(T.products)
+	if T.status == "OUT" {
+		fmt.Printf("]\nTotal Harga: %d\n", T.totalPrice)
+	} else {
+		fmt.Print("]\n")
+	}
+	fmt.Printf("Status: %v\n=======\n", T.status)
 }
 
 // Helper
@@ -415,7 +418,7 @@ func managementMenu(P *Products, T *Transactions) {
 				if s != "5" {
 					fmt.Printf("-----\tCara Pengurutan:\t-----\n1. Ascending\n2. Descending\n")
 					sorting := scanStatusSort()
-					sort(&tempProducts, sorting, s)
+					selectionSort(&tempProducts, sorting, s)
 				}
 				printManyProduct(tempProducts)
 			} else {
@@ -570,9 +573,9 @@ func main() {
 	var P Products
 	var T Transactions
 	var selectedMenu string
-	for true {
+	for {
 		fmt.Printf("===== Main Menu =====\n1. Management Produk\n2. Transaksi Produk\n0. Keluar\n=====================\n")
-		for true {
+		for {
 			fmt.Print("Pilih menu: ")
 			fmt.Scan(&selectedMenu)
 			if selectedMenu == "0" || selectedMenu == "1" || selectedMenu == "2" {
