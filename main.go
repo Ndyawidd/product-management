@@ -36,32 +36,33 @@ func notFound() {
 }
 
 // Product
-func findIdxProduct(P Products, name string) int {
-	for i := 0; i < P.totalData; i++ {
-		if P.data[i].name == name {
-			return i
+func insertProduct(P *Products, T *Transactions) {
+	var product Product
+	product.id = "PRD0"
+	fmt.Print("Masukkan nama barang: ")
+	fmt.Scan(&product.name)
+	var idx = findIdxProduct(*P, product.name)
+	if idx == -1 {
+		if P.totalData > 0 {
+			id, err := strconv.Atoi(P.data[P.totalData-1].id[3:])
+			if err != nil {
+				return
+			}
+			product.id = "PRD" + strconv.Itoa(id+1)
 		}
+		fmt.Print("Masukkan jumlah barang: ")
+		fmt.Scan(&product.qty)
+		fmt.Print("Masukkan harga barang: ")
+		fmt.Scan(&product.price)
+		P.data[P.totalData] = product
+		P.totalData++
+	} else {
+		product = P.data[idx]
+		fmt.Print("Masukkan jumlah barang: ")
+		fmt.Scan(&product.qty)
 	}
-	return -1
-}
-
-func maxMin(T Transactions, isMax bool) {
-	var result Transaction
-	result = T.data[0]
-	for i := 1; i < T.totalData; i++ {
-		if isMax && result.totalPrice < T.data[i].totalPrice && T.data[i].status == "OUT" {
-			result = T.data[i]
-		} else if !isMax && result.totalPrice > T.data[i].totalPrice && T.data[i].status == "OUT" {
-			result = T.data[i]
-		} else if result.status == "IN" {
-			result = T.data[i]
-		}
-	}
-	if result.status == "OUT" {
-		fmt.Printf("============ ID : %v ============\nTotal Produk: %v\n", result.id, result.products.totalData)
-		fmt.Print("Produk: [\n")
-		printManyProduct(result.products)
-		fmt.Printf("]\nTotal Harga: %d\n==========\n", result.totalPrice)
+	if product.qty > 0 {
+		insertTransaction(T, *P, "IN")
 	}
 }
 
@@ -146,52 +147,18 @@ func search(T Products, flag string) Products {
 	return arrProduct
 }
 
-func printManyProduct(P Products) {
-	for i := 0; i < P.totalData; i++ {
-		fmt.Printf("\nID: %v \nNama: %s \nHarga: %v \nJumlah: %v\n\n", P.data[i].id, P.data[i].name, P.data[i].price, P.data[i].qty)
-	}
-}
-
-func printProduct(P Product) {
-	fmt.Printf("\nID: %v \nNama: %s \nHarga: %v \nJumlah: %v\n\n", P.id, P.name, P.price, P.qty)
-}
-
-func insertProduct(P *Products, T *Transactions) {
-	var product Product
-	product.id = "PRD0"
-	fmt.Print("Masukkan nama barang: ")
-	fmt.Scan(&product.name)
-	var idx = findIdxProduct(*P, product.name)
-	if idx == -1 {
-		if P.totalData > 0 {
-			id, err := strconv.Atoi(P.data[P.totalData-1].id[3:])
-			if err != nil {
-				return
-			}
-			product.id = "PRD" + strconv.Itoa(id+1)
-		}
-		fmt.Print("Masukkan jumlah barang: ")
-		fmt.Scan(&product.qty)
-		fmt.Print("Masukkan harga barang: ")
-		fmt.Scan(&product.price)
-		P.data[P.totalData] = product
-		P.totalData++
-	} else {
-		product = P.data[idx]
-		fmt.Print("Masukkan jumlah barang: ")
-		_, err := fmt.Scanf("%d", &product.qty)
-		if err != nil {
-			fmt.Println("Data yang anda masukan tidak valid")
-			return
-		}
-	}
-	if product.qty > 0 {
-		insertTransaction(T, *P, "IN")
-	}
-}
-
 func updateProduct(P *Products, idx int, product Product) {
 	P.data[idx] = product
+}
+
+func updateQtyManyProducts(P *Products, selectedProducts Products) {
+	for i := 0; i < selectedProducts.totalData; i++ {
+		name := selectedProducts.data[i].name
+		idx := findIdxProduct(*P, name)
+		isExistData := P.data[idx]
+		isExistData.qty -= selectedProducts.data[i].qty
+		updateProduct(P, idx, isExistData)
+	}
 }
 
 func deleteProduct(P *Products, idx int) {
@@ -206,14 +173,23 @@ func deleteProduct(P *Products, idx int) {
 	}
 }
 
-func updateQtyManyProducts(P *Products, selectedProducts Products) {
-	for i := 0; i < selectedProducts.totalData; i++ {
-		name := selectedProducts.data[i].name
-		idx := findIdxProduct(*P, name)
-		isExistData := P.data[idx]
-		isExistData.qty -= selectedProducts.data[i].qty
-		updateProduct(P, idx, isExistData)
+func findIdxProduct(P Products, name string) int {
+	for i := 0; i < P.totalData; i++ {
+		if P.data[i].name == name {
+			return i
+		}
 	}
+	return -1
+}
+
+func printManyProduct(P Products) {
+	for i := 0; i < P.totalData; i++ {
+		fmt.Printf("\nID: %v \nNama: %s \nHarga: %v \nJumlah: %v\n\n", P.data[i].id, P.data[i].name, P.data[i].price, P.data[i].qty)
+	}
+}
+
+func printProduct(P Product) {
+	fmt.Printf("\nID: %v \nNama: %s \nHarga: %v \nJumlah: %v\n\n", P.id, P.name, P.price, P.qty)
 }
 
 // Transaction
@@ -241,10 +217,7 @@ func insertProductTransaction(P Products, selectedProducts *Products) {
 			printProduct(product)
 			fmt.Println("***************************")
 			fmt.Print("Masukkan jumlah barang: ")
-			_, err := fmt.Scanf("%d", &product.qty)
-			if err != nil {
-				break
-			}
+			fmt.Scan(&product.qty)
 			if product.qty <= P.data[idx].qty {
 				if product.qty != 0 {
 					P.data[idx].qty -= product.qty
@@ -366,6 +339,26 @@ func printTransaction(T Transaction) {
 	fmt.Printf("Status: %v\n=======\n", T.status)
 }
 
+func maxMin(T Transactions, isMax bool) {
+	var result Transaction
+	result = T.data[0]
+	for i := 1; i < T.totalData; i++ {
+		if isMax && result.totalPrice < T.data[i].totalPrice && T.data[i].status == "OUT" {
+			result = T.data[i]
+		} else if !isMax && result.totalPrice > T.data[i].totalPrice && T.data[i].status == "OUT" {
+			result = T.data[i]
+		} else if result.status == "IN" {
+			result = T.data[i]
+		}
+	}
+	if result.status == "OUT" {
+		fmt.Printf("============ ID : %v ============\nTotal Produk: %v\n", result.id, result.products.totalData)
+		fmt.Print("Produk: [\n")
+		printManyProduct(result.products)
+		fmt.Printf("]\nTotal Harga: %d\n==========\n", result.totalPrice)
+	}
+}
+
 // Helper
 func calculatePrice(P Products) int {
 	var totalPrice int
@@ -425,6 +418,7 @@ func managementMenu(P *Products, T *Transactions) {
 				notFound()
 			}
 		case "3":
+			//Change Product
 			if P.totalData > 0 {
 				fmt.Print("Masukkan nama Produk yang ingin di ubah: ")
 				fmt.Scan(&product.name)
@@ -445,6 +439,7 @@ func managementMenu(P *Products, T *Transactions) {
 				notFound()
 			}
 		case "4":
+			//Delete Product
 			if P.totalData > 0 {
 				fmt.Print("Masukkan nama barang: ")
 				fmt.Scan(&product.name)
