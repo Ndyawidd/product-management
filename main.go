@@ -249,13 +249,15 @@ func insertTransaction(T *Transactions, P Products, status string) {
 		costumedId = ctx + strconv.Itoa(id+1)
 	}
 
-	if status == "OUT" {
-		totalPrice = calculatePrice(P)
-	}
-
 	var currentProduct Products
 	currentProduct.data[currentProduct.totalData] = P.data[P.totalData-1]
 	currentProduct.totalData++
+
+	if status == "OUT" {
+		totalPrice = calculatePrice(P)
+		currentProduct = P
+	}
+
 	transaction = Transaction{id: costumedId, products: currentProduct, status: status, totalPrice: totalPrice}
 
 	T.data[T.totalData] = transaction
